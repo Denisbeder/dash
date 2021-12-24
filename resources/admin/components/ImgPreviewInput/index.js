@@ -12,6 +12,7 @@ import {
     HiOutlineTrash,
     HiOutlinePencil,
 } from "react-icons/hi";
+import { FiCrosshair } from "react-icons/fi";
 import Img from "../Img";
 import { Inertia } from "@inertiajs/inertia";
 
@@ -40,20 +41,34 @@ const ImgInputPreview = ({ name, label, handleOnChange, ...rest }) => {
                 <Box pos="relative">
                     <Img w="100%" minH="auto" src={srcPreview} />
 
-                    <Button
-                        size="sm"
-                        bg="white"
-                        rounded="md"
-                        border="1px"
-                        borderColor="borderColor"
-                        leftIcon={<HiOutlinePencil />}
-                        pos="absolute"
-                        left=".35em"
-                        top=".35em"
-                        onClick={() => Inertia.visitInModal('/dash/modal')}
-                    >
-                        Editar
-                    </Button>
+                    <Flex pos="absolute" left=".35em" top=".35em">
+                        <Button
+                            title="Cortar, Girar, Espelhar e Desenhar sob a imagem."
+                            size="sm"
+                            bg="white"
+                            rounded="md"
+                            border="1px"
+                            borderColor="borderColor"
+                            leftIcon={<HiOutlinePencil />}
+                            onClick={() => Inertia.visitInModal("/dash/editor-image")}
+                        >
+                            Editar
+                        </Button>
+
+                        <IconButton
+                            title="Ponto focal (Selecione uma área importante da imagem que não deve ser cortada)."
+                            ml=".5em"
+                            size="sm"
+                            bg="white"
+                            rounded="full"
+                            border="1px"
+                            borderColor="borderColor"
+                            icon={<FiCrosshair />}
+                            onClick={() => {
+                                inputRef.current.click();
+                            }}
+                        />
+                    </Flex>
 
                     <Flex pos="absolute" right=".35em" top=".35em">
                         <IconButton

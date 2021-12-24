@@ -16,7 +16,7 @@ Route::post('/posts/create', [PostsController::class, 'store']);
 Route::get('/users', [UsersController::class, 'index']);
 Route::get('/users/create', [UsersController::class, 'create']);
 
-Route::get('/modal', function () {
+Route::get('/editor-image', function () {
     sleep(1);
-    return \Inertia\Inertia::render('EditorImage', ['title' => 'Editar imagem', 'size' => 'full']);
+    return \Inertia\Inertia::render('EditorImage', ['title' => 'Editar imagem', 'size' => '70%']);
 });

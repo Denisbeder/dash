@@ -25,7 +25,7 @@ const LayoutPanel = ({ children }) => {
                     <Box position="relative">{children}</Box>
                 </GridItem>
             </Grid>
-            <ModalComponent />
+            <ModalComponent autoFocus={false} />
         </Box>
     );
 };

@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from "react";
+import React, { useLayoutEffect, useEffect, useState, useRef } from "react";
 import "tui-image-editor/dist/tui-image-editor.css";
 import ImageEditor from "@toast-ui/react-image-editor";
 import { useTheme } from "@chakra-ui/react";
@@ -44,18 +44,24 @@ const locale = {
     ZoomIn: "Aumentar zoom",
 };
 
-const configs = (loadImage, theme) => {
+const configs = (theme, loadImage) => {
+    // Set default image 1x1px transparent.
+    loadImage = loadImage || {
+        path: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=",
+        name: "image_init",
+    };
     return {
         includeUI: {
             locale: locale,
             loadImage: loadImage,
             theme: {
-                "header.backgroundColor":
-                    `white; padding: 0 ${theme.space[5]};`,
+                "header.backgroundColor": `white; padding: 0 ${theme.space[5]};`,
                 "common.backgroundColor": "white",
                 "downloadButton.backgroundColor": theme.colors.primary[500],
                 "downloadButton.border": `none; border-radius: ${theme.radii.md};`,
                 "loadButton.border": `1px solid ${theme.colors.borderColor}; border-radius: ${theme.radii.md};`,
+                "downloadButton.fontSize": "15px",
+                "loadButton.fontSize": "15px",
             },
             menu: ["crop", "flip", "rotate", "draw", "shape", "text"],
             initMenu: null,
@@ -68,10 +74,12 @@ const configs = (loadImage, theme) => {
         cssMaxHeight: 400,
         cssMaxWidth: 500,
         selectionStyle: {
-            cornerSize: 50,
-            cornerStrokeColor: "blue",
+            cornerSize: 20,
+            cornerColor: "silver",
+            cornerStrokeColor: "#333333",
             rotatingPointOffset: 70,
-            borderColor: "red",
+            transparentCorners: false,
+            borderColor: "silver",
             lineWidth: 2,
         },
         usageStatistics: false,
@@ -79,7 +87,16 @@ const configs = (loadImage, theme) => {
 };
 
 const EditorImage = (props) => {
+    const editorRef = useRef(null);
+    const [editorInstance, setEditorInstance] = useState(null);
+    const theme = useTheme();
+
     useLayoutEffect(() => {
+        // Add border radius bottom
+        document.querySelector(
+            ".tui-image-editor-container.bottom"
+        ).style.borderRadius = `${theme.radii["md"]}`;
+
         // Remove logo
         document
             .getElementsByClassName("tui-image-editor-header-logo")[0]
@@ -91,17 +108,36 @@ const EditorImage = (props) => {
             .childNodes[1].remove();
     }, []);
 
-    return (
-        <ImageEditor
-            {...configs(
-                {
-                    path: "http://localhost:9000/dash/photo-1609753897383-bf9d71a1138d.jpg",
-                    name: "SampleImage",
-                },
-                useTheme()
-            )}
-        />
-    );
+    useLayoutEffect(() => {
+        setEditorInstance(editorRef.current.getInstance());
+    });
+
+    useLayoutEffect(() => {
+        console.log(editorRef.current.getRootElement());
+    });
+
+    if (editorInstance !== null) {
+        console.log(editorInstance);
+        //console.log(editorInstance.toDataURL());
+
+        setTimeout(() => {
+            editorInstance
+                .loadImageFromURL(
+                    "http://localhost:9000/dash/palacio_do_planalto_0.jpg",
+                    "palacio_do_planalto_0.jpg"
+                )
+                .then((result) => {
+                    console.log(
+                        "old : " + result.oldWidth + ", " + result.oldHeight
+                    );
+                    console.log(
+                        "new : " + result.newWidth + ", " + result.newHeight
+                    );
+                });
+        }, 100);
+    }
+
+    return <ImageEditor ref={editorRef} {...configs(theme)} />;
 };
 
 export default EditorImage;
