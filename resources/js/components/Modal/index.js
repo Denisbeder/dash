@@ -6,10 +6,8 @@ import {
     ModalCloseButton,
     CircularProgress,
     Center,
-    Button,
-    ModalBody,
 } from "@chakra-ui/react";
-import { Inertia, hrefToUrl, urlWithoutHash } from "@inertiajs/inertia";
+import { Inertia } from "@inertiajs/inertia";
 import AxiosInertia from "@inertiajs/inertia/node_modules/axios";
 import AxiosInertiaCancel from '@inertiajs/inertia/node_modules/axios/lib/cancel/Cancel';
 
@@ -21,9 +19,7 @@ const INITIAL_MODAL_STATE = {
     close: null,
     cancelToken: null,
     options: {},
-    removeBeforeEventListenerList: [],
-    removeRedirectBackEventListenerList: [],
-    removeSuccessEventListenerList: [],
+    removeEventListenerList: [],
 };
 
 const Modal = ({ ...rest }) => {
@@ -34,12 +30,16 @@ const Modal = ({ ...rest }) => {
     const resetState = () => setModalState(INITIAL_MODAL_STATE);
 
     const removeEvents = () => {
-        if (modalState.removeBeforeEventListenerList.length > 0) {
-            modalState.removeBeforeEventListenerList.forEach((removeEvent, index) => {
+        if (modalState.removeSuccessEventListener) {
+            modalState.removeSuccessEventListener();
+        }
+
+        if (modalState.removeEventListenerList.length > 0) {
+            modalState.removeEventListenerList.forEach((removeEvent, index) => {
                 console.log("<<removendo-evento>>", removeEvent);
                 removeEvent();
-                modalState.removeBeforeEventListenerList.splice(index, 1);
-            })            
+                modalState.removeEventListenerList.splice(index, 1);
+            });            
         }
     }
 
@@ -64,10 +64,29 @@ const Modal = ({ ...rest }) => {
                 // make sure the backend knows we're requesting from within a modal
                 event.detail.visit.headers["X-Inertia-Modal"] = true;
                 console.log("<<event-before>>", event);
+
+                // if exist method redirectBack make sure the backend knows wich the next reqeust expect redirect back route
+                if (typeof options?.redirectBack !== "undefined") {
+                    event.detail.visit.headers["X-Inertia-Modal-Redirect-Back"] = true;
+                }
             });
 
-            // Stack events to remove after finish visit
-            const eventBeforeRemove = modalState.removeBeforeEventListenerList.push(removeBeforeEventListener);
+            const removeRedirectBackEventListener = Inertia.on("success", (event) => {
+                console.log("<<event-success>> redirectBack", event);
+                if (typeof options?.redirectBack === "function") {
+                    options.redirectBack(event);
+                }
+            });
+
+            // This event will be removed after executing the close method, so it should be in a separate variable in state
+            const removeSuccessEventListener = Inertia.on("success", (event) => {
+                console.log("<<event-success>> close", event);
+                close();
+            });
+
+            // Stack events to remove after finish visit. 
+            // Important: the order of events remove is important. First remove the events of 'after' after so remove anothers
+            const eventBeforeRemove = modalState.removeEventListenerList.push(removeBeforeEventListener, removeRedirectBackEventListener);
 
             setModalState(state => ({
                 ...state,
@@ -77,9 +96,8 @@ const Modal = ({ ...rest }) => {
                 page: clonePage,
                 close,
                 options,
-                removeBeforeEventListenerList: eventBeforeRemove,
-                //removeRedirectBackEventListener,
-                //removeSuccessEventListener,
+                removeSuccessEventListener,
+                removeEventListenerList: eventBeforeRemove,
             }));
 
             // Finish visit and dispatch event finish to clear events
@@ -88,6 +106,8 @@ const Modal = ({ ...rest }) => {
     }
 
     useEffect(() => {
+        // Grants clear wherever events existing. 
+        // This prevents put header[X-Inertia-Modal] when make request after close modal
         Inertia.on('finish', (event) => {
             removeEvents();
             console.log("<<FINISH-ALL>>");
@@ -113,7 +133,6 @@ const Modal = ({ ...rest }) => {
 
                 // Here process modal request
                 if (isModal(response.config.headers["X-Inertia-Modal"])) {
-                    console.log('entr_____OUU');
                     handleModal(response, url, options);
 
                     // When request is modal stop original response of Inertia

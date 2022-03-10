@@ -20,7 +20,11 @@ const Index = ({ datas, ...props }) => {
                     <Button
                         variant="primary"
                         leftIcon={<HiOutlinePlus />}
-                        onClick={() => Inertia.visitInModal("/category/create")}
+                        onClick={() => Inertia.visitInModal("/category/create", {
+                            redirectBack: (e) => {
+                                console.log(">>>>>>>>>>>>>>EXECUTANDO redirectBack", e);
+                            }
+                        })}
                     >
                         Novo
                     </Button>
