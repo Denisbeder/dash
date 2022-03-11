@@ -3,7 +3,7 @@ import { IconButton } from "@chakra-ui/react";
 import { SidebarContext } from "../../contexts/SidebarContext";
 import { HiOutlineMenuAlt1 } from "react-icons/hi";
 
-const SidebarButton = ({ ...rest }) => {
+const SidebarButton = () => {
     const { isOpen, handleIsOpen } = useContext(SidebarContext);
 
     return (
@@ -12,6 +12,7 @@ const SidebarButton = ({ ...rest }) => {
             onClick={() => handleIsOpen()}
             bg="transparent"
             size="lg"
+            ml={{ base: "-.885em", md: "-2.25em" }} 
             paddingInlineEnd={{ base: "1em", md: "2.5em" }}
             paddingInlineStart={{ base: "1em", md: "2.5em" }}
             minH="64px"
@@ -37,7 +38,6 @@ const SidebarButton = ({ ...rest }) => {
                 },
                 md: { display: "none" },
             }}
-            {...rest}
         />
     );
 };

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
     Menu,
     MenuList,
@@ -48,4 +48,4 @@ const NotificationsTopBar = () => {
     );
 };
 
-export default NotificationsTopBar;
+export default memo(NotificationsTopBar);

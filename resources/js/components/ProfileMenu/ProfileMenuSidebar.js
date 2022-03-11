@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
     Button,
     Menu,
@@ -60,4 +60,4 @@ const ProfileMenuSidebar = () => {
     );
 };
 
-export default ProfileMenuSidebar;
+export default memo(ProfileMenuSidebar);

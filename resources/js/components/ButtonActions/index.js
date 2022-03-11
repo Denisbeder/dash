@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
     ButtonGroup,
     Button,
@@ -43,4 +43,4 @@ const ButtonAction = () => {
     );
 };
 
-export default ButtonAction;
+export default memo(ButtonAction);

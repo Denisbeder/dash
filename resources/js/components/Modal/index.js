@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Modal as ModalBase,
     ModalOverlay,
@@ -40,6 +40,7 @@ const Modal = ({ ...rest }) => {
             const opts = {
                 headers: {}, 
                 redirectBack: true,
+                onSuccess: null,
                 modalProps: {}, 
                 pageProps: {}, 
                 ...options
@@ -114,17 +115,17 @@ const Modal = ({ ...rest }) => {
 
         // This event will be removed after executing the close method, so it should be in a separate variable in state
         const _removeSuccessEventListener = Inertia.on("success", (event) => {
-            // return callback of redirect back        
-            if (typeof options.redirectBack === "function") {
+            // return callback of onSuccess       
+            if (typeof options.onSuccess === "function") {
                 // When has redirectBack funtion and after execute the redirectBack function, autoremove this event
                 // This prevent repeat execution of redirectBack function one each visit click
                 _removeSuccessEventListener();
 
                 // Execute redirectBack function
-                options.redirectBack(event, close);                
+                options.onSuccess(event, close);                
             }
             
-            // Close the modal on success request
+            // Close the modal on success request 
             close();
         });
 

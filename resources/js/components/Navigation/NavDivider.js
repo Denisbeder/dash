@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Box } from "@chakra-ui/react";
 
 const NavDivider = ({ children, ...rest }) => (
@@ -17,4 +17,4 @@ const NavDivider = ({ children, ...rest }) => (
     </Box>
 );
 
-export default NavDivider;
+export default memo(NavDivider);

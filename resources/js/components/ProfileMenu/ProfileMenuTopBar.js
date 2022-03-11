@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import {
     Menu,
     MenuList,
@@ -37,4 +37,4 @@ const ProfileMenuTopBar = () => {
     );
 };
 
-export default ProfileMenuTopBar;
+export default memo(ProfileMenuTopBar);

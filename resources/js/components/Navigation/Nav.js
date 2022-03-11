@@ -1,4 +1,4 @@
-import React from "react";
+import React, {memo} from "react";
 import { Box, Accordion } from "@chakra-ui/react";
 import NavItem from "./NavItem";
 import NavDivider from "./NavDivider";
@@ -101,4 +101,4 @@ const Nav = () => (
     </Box>
 );
 
-export default Nav;
+export default memo(Nav);

@@ -22,10 +22,16 @@ const NotificationsSidebar = () => {
                         bg="red"
                         color="white"
                         size="sm"
-                        padding=".45em"
+                        padding="0"
+                        height="2em"
+                        width="2em"
+                        lineHeight="2em" 
+                        letterSpacing="-0.06em"
+                        justifyContent="center"  
+                        fontSize="0.7em"                     
                         rounded="full"
                     >
-                        99
+                        99+
                     </Tag>
                 }
                 marginBottom=".5rem"

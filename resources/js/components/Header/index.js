@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { memo, useContext } from "react";
 import { Flex, Divider, Button } from "@chakra-ui/react";
 import SidebarButton from "../SidebarButton";
 import { ProfileMenuTopBar } from "../ProfileMenu";
@@ -33,7 +33,7 @@ const Header = ({ children, ...rest }) => {
                 display={{ base: "flex", md: "none" }}
             >
                 <Flex alignItems="center">
-                    <SidebarButton ml={{ base: "-.885em", md: "-2.25em" }} />
+                    <SidebarButton />
                     <Divider
                         orientation="vertical"
                         mr={{ base: "1em", md: "2.5em" }}
@@ -58,4 +58,4 @@ const Header = ({ children, ...rest }) => {
     );
 };
 
-export default Header;
+export default memo(Header);

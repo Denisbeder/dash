@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import Navigation from "../Navigation";
 import { Inertia } from "@inertiajs/inertia";
 import { Box, Button, Grid, GridItem, Flex } from "@chakra-ui/react";
@@ -90,4 +90,4 @@ const Sidebar = () => {
     );
 };
 
-export default Sidebar;
+export default memo(Sidebar);

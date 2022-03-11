@@ -21,7 +21,10 @@ const Index = ({ datas, ...props }) => {
                         variant="primary"
                         leftIcon={<HiOutlinePlus />}
                         onClick={() => Inertia.visitInModal("/category/create", {
-                            redirectBack: false
+                            redirectBack: false,
+                            onSuccess: () => {
+                                alert('OLA');
+                            }
                         })}
                     >
                         Novo
