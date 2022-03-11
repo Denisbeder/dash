@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     Modal as ModalBase,
     ModalOverlay,
@@ -12,45 +12,135 @@ import AxiosInertia from "@inertiajs/inertia/node_modules/axios";
 import AxiosInertiaCancel from '@inertiajs/inertia/node_modules/axios/lib/cancel/Cancel';
 
 const INITIAL_MODAL_STATE = {
-    isOpen: false,
-    loading: false,
     component: null,
     page: null,
     close: null,
-    cancelToken: null,
     options: {},
-    removeEventListenerList: [],
 };
 
-const Modal = ({ ...rest }) => {
+const Modal = ({ ...rest }) => {    
+    const [isOpen, setIsOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [removeBeforeEventListener, setRemoveBeforeEventListener] = useState(null);
+    const [removeSuccessEventListener, setRemoveSuccessEventListener] = useState(null);
+    const [cancelToken, setCancelToken] = useState(null);
+    const [finishVisit, setFinishVisit] = useState(false);
     const [modalState, setModalState] = useState(INITIAL_MODAL_STATE);
+
+    useEffect(() => {
+        // Build this method to dispatch modal from Inertia custom function
+        Inertia.visitInModal = (url, options) => {
+            // Init visit removing all rest events
+            removeAllEvents();            
+
+            // Open modal and set is loading
+            setIsOpen(true);
+            setLoading(true);
+
+            const opts = {
+                headers: {}, 
+                redirectBack: true,
+                modalProps: {}, 
+                pageProps: {}, 
+                ...options
+            };
+
+            const inertiaAxiosResponseInterceptor = AxiosInertia.interceptors.response.use((response) => {                
+                // Sinalize finish load to progressbar and loading
+                setLoading(false);
+
+                // Here process modal request
+                if (isModal(response.config.headers["X-Inertia-Modal"])) {
+                    handleModal(response, url, opts);
+
+                    // When request is modal stop original response of Inertia
+                    return Promise.reject(new AxiosInertiaCancel());
+                }
+
+                // When request is not modal return original Inertia response
+                return response;                
+            });
+
+            Inertia.visit(url, {
+                ...opts,
+                onCancelToken: (cancelToken) => (setCancelToken(cancelToken)),
+                headers: { ...opts.headers, ["X-Inertia-Modal"]: 1 }
+            });     
+            
+            // Remove response interceptor 
+            AxiosInertia.interceptors.response.eject(inertiaAxiosResponseInterceptor);
+        };
+    }, [removeBeforeEventListener, removeSuccessEventListener]);
+
+    useEffect(() => {
+        if (finishVisit) { 
+            removeEvent(removeBeforeEventListener);
+        }
+    }, [finishVisit]);
 
     const isModal = (header) => (header === true || header === 1 || header === "true" || header === "1");
 
     const resetState = () => setModalState(INITIAL_MODAL_STATE);
 
-    const removeEvents = () => {
-        if (modalState.removeSuccessEventListener) {
-            modalState.removeSuccessEventListener();
+    const removeEvent = (eRemove) => {
+        if (eRemove?.event) {
+            eRemove.event();
+            eRemove.updateState();
         }
+    };
 
-        if (modalState.removeEventListenerList.length > 0) {
-            modalState.removeEventListenerList.forEach((removeEvent, index) => {
-                console.log("<<removendo-evento>>", removeEvent);
-                removeEvent();
-                modalState.removeEventListenerList.splice(index, 1);
-            });            
-        }
-    }
+    const removeAllEvents = () => {
+        removeEvent(removeBeforeEventListener);
+        removeEvent(removeSuccessEventListener);
+    };
+
+    const createEvents = (page, options) => {       
+        const _removeBeforeEventListener = Inertia.on("before", (event) => {
+            // if case a next visit click request, after a POST for exemple, is a GET request garants not place this headers in request
+            if (event.detail.visit.method !== "get") {
+                // make sure the backend knows we're requesting from within a 
+                event.detail.visit.headers["X-Inertia-From-Modal"] = true;
+
+                // if exist method redirectBack make sure the backend knows wich the next reqeust expect redirect back route
+                if (options.redirectBack) {
+                    event.detail.visit.headers["X-Inertia-From-Modal-Redirect-Back"] = true;
+                }
+            } else {
+                _removeBeforeEventListener();
+            }            
+        });
+
+        setRemoveBeforeEventListener({updateState: () => (setRemoveBeforeEventListener(null)), event: _removeBeforeEventListener});
+
+        // This event will be removed after executing the close method, so it should be in a separate variable in state
+        const _removeSuccessEventListener = Inertia.on("success", (event) => {
+            // return callback of redirect back        
+            if (typeof options.redirectBack === "function") {
+                // When has redirectBack funtion and after execute the redirectBack function, autoremove this event
+                // This prevent repeat execution of redirectBack function one each visit click
+                _removeSuccessEventListener();
+
+                // Execute redirectBack function
+                options.redirectBack(event, close);                
+            }
+            
+            // Close the modal on success request
+            close();
+        });
+
+        setRemoveSuccessEventListener({updateState: () => (setRemoveSuccessEventListener(null)), event: _removeSuccessEventListener});
+    };
 
     const close = () => {
         // Ensure make abort of Modal request
-        modalState.cancelToken?.cancel();
+        cancelToken?.cancel();
 
-        removeEvents();
+        removeAllEvents();
 
         // Reset states
         resetState();
+        setLoading(false);
+        setIsOpen(false);
     };
 
     const handleModal = (response, url, options) => {
@@ -60,103 +150,25 @@ const Modal = ({ ...rest }) => {
         Promise.resolve(resolveComponent).then((component) => {
             const clonePage = JSON.parse(JSON.stringify(page));
 
-            const removeBeforeEventListener = Inertia.on("before", (event) => {
-                // make sure the backend knows we're requesting from within a modal
-                event.detail.visit.headers["X-Inertia-Modal"] = true;
-                console.log("<<event-before>>", event);
-
-                // if exist method redirectBack make sure the backend knows wich the next reqeust expect redirect back route
-                if (typeof options?.redirectBack !== "undefined") {
-                    event.detail.visit.headers["X-Inertia-Modal-Redirect-Back"] = true;
-                }
-            });
-
-            const removeRedirectBackEventListener = Inertia.on("success", (event) => {
-                console.log("<<event-success>> redirectBack", event);
-                if (typeof options?.redirectBack === "function") {
-                    options.redirectBack(event);
-                }
-            });
-
-            // This event will be removed after executing the close method, so it should be in a separate variable in state
-            const removeSuccessEventListener = Inertia.on("success", (event) => {
-                console.log("<<event-success>> close", event);
-                close();
-            });
-
-            // Stack events to remove after finish visit. 
-            // Important: the order of events remove is important. First remove the events of 'after' after so remove anothers
-            const eventBeforeRemove = modalState.removeEventListenerList.push(removeBeforeEventListener, removeRedirectBackEventListener);
-
-            setModalState(state => ({
-                ...state,
-                isOpen: true,
-                loading: false,
+            setModalState({
                 component,
                 page: clonePage,
                 close,
-                options,
-                removeSuccessEventListener,
-                removeEventListenerList: eventBeforeRemove,
-            }));
+                options                
+            });
 
             // Finish visit and dispatch event finish to clear events
             Inertia.finishVisit(Inertia.activeVisit);
+            setFinishVisit(true);
+
+            // manage events
+            createEvents(page, options);
         });
     }
 
-    useEffect(() => {
-        // Grants clear wherever events existing. 
-        // This prevents put header[X-Inertia-Modal] when make request after close modal
-        Inertia.on('finish', (event) => {
-            removeEvents();
-            console.log("<<FINISH-ALL>>");
-        });
-    }, []);
-
-    // Build this method to dispatch modal from Inertia custom function
-    useEffect(() => {
-        Inertia.visitInModal = (url, options) => {
-            setModalState((state) => ({ ...state, isOpen: true, loading: true }));
-    
-            const opts = {
-                headers: {}, 
-                redirectBack: true,
-                modalProps: {}, 
-                pageProps: {}, 
-                ...options
-            };
-    
-            const inertiaAxiosResponseInterceptor = AxiosInertia.interceptors.response.use((response) => {                
-                // Sinalize finish load to progressbar and loading
-                setModalState((state) => ({ ...state, loading: false }));
-
-                // Here process modal request
-                if (isModal(response.config.headers["X-Inertia-Modal"])) {
-                    handleModal(response, url, options);
-
-                    // When request is modal stop original response of Inertia
-                    return Promise.reject(new AxiosInertiaCancel());
-                }
-
-                // When request is not modal return original Inertia response
-                return response;                
-            });
-    
-            Inertia.visit(url, {
-                ...opts,
-                onCancelToken: (cancelToken) => (setModalState(state => ({...state, cancelToken: cancelToken}))),
-                headers: { ...opts.headers, ["X-Inertia-Modal"]: 1 }
-            });     
-            
-            // Remove response interceptor 
-            AxiosInertia.interceptors.response.eject(inertiaAxiosResponseInterceptor);
-        };
-    }, []);
-
     return (
         <ModalBase
-            isOpen={modalState.isOpen}
+            isOpen={isOpen}
             onClose={close}
             {...rest}
         >
@@ -164,7 +176,7 @@ const Modal = ({ ...rest }) => {
             <ModalContent>
                 <ModalCloseButton />
                 <div>
-                    {modalState.loading ? (
+                    {loading ? (
                         <ModalLoading />
                     ) : (
                         <ModalContentLoader modal={modalState} />

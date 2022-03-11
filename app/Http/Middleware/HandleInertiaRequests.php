@@ -69,7 +69,8 @@ class HandleInertiaRequests extends Middleware
      */
     public function handleModalRequest(Request $request, Response $response)
     {
-        if ($response instanceof RedirectResponse && (bool) $request->header('X-Inertia-Modal-Redirect-Back')) {
+        //dd($response);
+        if ($response instanceof RedirectResponse && (bool) $request->header('X-Inertia-From-Modal-Redirect-Back')) {
             return back(303);
         }
 

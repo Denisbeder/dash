@@ -32,6 +32,7 @@ class CategoryController extends Controller
 
     public function create()
     {
+        //sleep(11);
         $view = request()->isXmlHttpRequest() ? 'Category/FormModal' : 'Category/Form';
         return Inertia::render($view);
     }
@@ -53,6 +54,7 @@ class CategoryController extends Controller
 
     public function show($id)
     {
+        //sleep(2);
         return Inertia::render('Category/Show', [
             'datas' => function () {
                 return new Category([
